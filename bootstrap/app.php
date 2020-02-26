@@ -20,11 +20,10 @@ require_once __DIR__.'/../vendor/autoload.php';
 $app = new Laravel\Lumen\Application(
     dirname(__DIR__)
 );
-$app->register(Jenssegers\Mongodb\MongodbServiceProvider::class);
-
+class_alias('Illuminate\Support\Facades\Config', 'Config');
 $app->withFacades();
 
-$app->withEloquent();
+// $app->withEloquent();
 
 /*
 |--------------------------------------------------------------------------
@@ -80,7 +79,14 @@ $app->routeMiddleware([
 $app->register(App\Providers\AppServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
 $app->register(App\Providers\EventServiceProvider::class);
+$app->register(Jenssegers\Mongodb\MongodbServiceProvider::class);
 
+
+#Load Config
+$app->configure('database');
+$app->configure('general_config');
+$app->configure('mongo_config');
+$app->configure('redis');
 /*
 |--------------------------------------------------------------------------
 | Load The Application Routes

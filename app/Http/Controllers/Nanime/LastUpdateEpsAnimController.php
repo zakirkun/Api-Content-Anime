@@ -15,299 +15,106 @@ use \Sunra\PhpSimple\HtmlDomParser;
 use Illuminate\Support\Facades\DB;
 use \Jenssegers\Agent\Agent;
 
+use Cache;
+use Config;
+
+#Load Helper V1
+use App\Helpers\V1\ResponseConnected as ResponseConnected;
+use App\Helpers\V1\HelpersController as HelpersController;
+
+#Load Models V1
+use App\Models\V1\MainModel as MainModel;
+
 // done tinggal token db
 class LastUpdateEpsAnimController extends Controller
 {
     public function LastUpdateAnime(Request $request){
-        // $agent = new Agent();
-        // $headers=$agent->setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.13+ (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2');
-        // $res=$agent->setHttpHeaders($headers);
-        // dd($headers);
-        $ApiKey=$request->header("X-API-KEY");
-        $PageNumber=$request->header("PageNumber") ? $request->header("PageNumber") : 1;
-        $Token = DB::table('User')->where('token',$ApiKey)->first();
+        $awal = microtime(true);
+        $param = $request->all();
+        $ApiKey = $request->header("X-API-KEY");
+        $Users = MainModel::getUser($ApiKey);
+        $Token = $Users[0]['token'];
         if($Token){
-            try{
-                $ConfigController = new ConfigController();
-                $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
-                if($PageNumber<2){
-                    $BASE_URL_LIST=$BASE_URL;
-                }else{
-                    $BASE_URL_LIST=$BASE_URL."/?page=".$PageNumber;
-                }
-                return $this->LAstUpdateAnimValue($PageNumber,$BASE_URL_LIST,$BASE_URL);
-            }catch(\Exception $e){
-                return $this->InternalServerError();
-            }
+            // try{
+                return $this->LastUpdateAnimValue($param,$awal);
+            // }catch(\Exception $e){
+            //     return ResponseConnected::InternalServerError("Last Update Anime","Internal Server Error",$awal);
+            // }
             
         }else{
-            return $this->InvalidToken();
+            return ResponseConnected::InvalidToken("Last Update Anime","Invalid Token", $awal);
         }
 
         
     }
     
-    public function Success($TotalSearchPage,$PageNumber,$LastUpdateAnime){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Last Update Anime",
-                "Status"=> "Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Success.",
-                    "Code" => 200
-                ),
-                "Body"=> array(
-                    "TotalSearchPage"=>$TotalSearchPage,
-                    "PageSearch"=>$PageNumber,
-                    "LastUpdateAnime"=>$LastUpdateAnime
-                )
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function InternalServerError(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Last Update Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Internal Server Error",
-                    "Code" => 500
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function PageNotFound(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Last Update Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Page Not Found.",
-                    "Code" => 404
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function InvalidToken(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Last Update Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Invalid Token",
-                    "Code" => 203
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function FilterHreftEpisode($value){
-        $subHref = explode("<a", $value);
-        $valueHref=str_replace("href","",$subHref[1]);
-        $filterValue=substr($valueHref, strpos($valueHref, '"') + 1);
-        $href = strtok($filterValue, '"');
-        return $href;
-    }
-    public function FilterPageEpisode($value){
-        $subHref = explode("<a", $value);
-        $countHref=count($subHref);
-        if($countHref>=8){
-            $i=$countHref-1;
-        }else{
-            $i=$countHref;
-        }
-        $valueHref=str_replace("href","",$subHref[$i]);
-        $filterValue=substr($valueHref, strpos($valueHref, '?') + 1);
-        $filterValue01=substr($filterValue, strpos($filterValue, '=') + 1);
-        $href = strtok($filterValue01, '"');
-        return $href;
-    }
-
-    public function LAstUpdateAnimValue($PageNumber,$BASE_URL_LIST,$BASE_URL){
-        $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
-        $client->getConfig('handler')->push(CloudflareMiddleware::create());
-        $goutteClient = new GoutteClient();
-        $goutteClient->setClient($client);
-        $crawler = $goutteClient->request('GET', $BASE_URL_LIST);
-        $response = $goutteClient->getResponse();
-        $status = $response->getStatus();
+    public function LastUpdateAnimValue($param,$awal){
+        $limitRange = (isset($param['params']['limit_range'])) ? (int)($param['params']['limit_range']) : 20;
+        $starIndex = (isset($param['params']['star_index'])) ? (int)($param['params']['star_index']) : 0;
+        $minRowPegination = (isset($param['params']['min_row_pegination'])) ? (int)($param['params']['min_row_pegination']) : 5;
+        $isUpdated = (isset($param['params']['is_updated']) ? filter_var($param['params']['is_updated'], FILTER_VALIDATE_BOOLEAN) : FALSE);
         
-        // $Body=(string)$response->getBody();
-        if($status == 200){
-            $LastUpdateEps= $crawler->filter('.col-md-7')->each(function ($node,$i) {
-                $subhref = $node->filter('.col-md-3')->each(function ($nodel, $i) {
-                    $href = $nodel->filter('a')->attr("href");
-                    $image = $nodel->filter('img')->attr("src");
-                    $title = $nodel->filter('.post-title')->text('Default text content');
-                    $status =  $nodel->filter('.status')->text('Default text content');
-                    $episode =  $nodel->filter('.episode')->text('Default text content');
-                    $ListUpdtnime=array(
-                            "hrefSingleList"=>$href,
-                            "image"=>$image,
-                            "title"=>$title,
-                            "status"=>$status,
-                            "episode"=>$episode
-                    );
-                    
-                    return $ListUpdtnime;
-                });  
-                return $subhref; 
-            });
-            
-            
-            if($LastUpdateEps){
-                $SingleEpisode=array();
-                for($i=0;$i<count($LastUpdateEps[0]);$i++){
-                    $SingleListHref=$BASE_URL."".$LastUpdateEps[0][$i]['hrefSingleList'];
-                    $crawler2 = $goutteClient->request('GET', $SingleListHref);
-                    $response2 = $goutteClient->getResponse();
-                    try{
-                        $DetailHref =  $crawler2->filter('.col-md-12 > .episodelist')->html();
-                    }catch(\Exception $e){
-                        $DetailHref ="";
-                    }
-                    
-                    if($DetailHref){
-                        $SubListDetail= $crawler2->filter('.col-md-7')->each(function ($node,$i) {
-
-                            $synopsis = $node->filter('.description > p')->text('Default text content');
-                            $Subgenre = $node->filter('.description')->html();
-                            $detGenre = explode("<a", $Subgenre);
-                            $genre=array();
-                            for($j=1;$j<count($detGenre);$j++){
-                                $genre[]=substr($detGenre[$j], strpos($detGenre[$j], ">") + 1);
-                            } 
-                            $ListDetail = $node->filter('.animeInfo > ul')->html();
-                            $SubDetail01 = explode("<b", $ListDetail);
-                            $SubDetail02=array(
-                                "Judul"=>substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1),
-                                "JudulAlternatif"=>substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
-                                "Rating"=>substr($SubDetail01[3], strpos($SubDetail01[3], ":") + 1),
-                                "Votes"=>substr($SubDetail01[4], strpos($SubDetail01[4], ":") + 1),
-                                "Status"=>substr($SubDetail01[5], strpos($SubDetail01[5], ":") + 1),
-                                "TotalEpisode"=>substr($SubDetail01[6], strpos($SubDetail01[6], ":") + 1),
-                                "HariTayang"=>substr($SubDetail01[7], strpos($SubDetail01[7], ":") + 1),
-
-                            );
-                            
-                            $DetailHref =  $node->filter('.col-md-12 > .episodelist')->html();
-                            
-                            $href = $this->FilterHreftEpisode($DetailHref);
-                            $SubListDetail=array(
-                                "subDetail"=>$SubDetail02,
-                                "synopsis"=>$synopsis,
-                                "genre"=>$genre,
-                                "hrefEpisode"=>$href
-                            );
-                            return $SubListDetail; 
-                        });
-                    }else{
-                        $SubListDetail= $crawler2->filter('.col-md-7')->each(function ($node,$i) {
-
-                            $synopsis = $node->filter('.description > p')->text('Default text content');
-                            $Subgenre = $node->filter('.description')->html();
-                            $detGenre = explode("<a", $Subgenre);
-                            $genre=array();
-                            for($j=1;$j<count($detGenre);$j++){
-                                $genre[]=substr($detGenre[$j], strpos($detGenre[$j], ">") + 1);
-                            } 
-                            $ListDetail = $node->filter('.animeInfo > ul')->html();
-                            $SubDetail01 = explode("<b", $ListDetail);
-                            $SubDetail02=array(
-                                "Judul"=>substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1),
-                                "JudulAlternatif"=>substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
-                                "Rating"=>substr($SubDetail01[3], strpos($SubDetail01[3], ":") + 1),
-                                "Votes"=>substr($SubDetail01[4], strpos($SubDetail01[4], ":") + 1),
-                                "Status"=>substr($SubDetail01[5], strpos($SubDetail01[5], ":") + 1),
-                                "TotalEpisode"=>substr($SubDetail01[6], strpos($SubDetail01[6], ":") + 1),
-                                "HariTayang"=>substr($SubDetail01[7], strpos($SubDetail01[7], ":") + 1),
-
-                            );
-
-                            $href = $node->filter('.col-md-3 > a')->attr("href");
-                            $SubListDetail=array(
-                                "subDetail"=>$SubDetail02,
-                                "synopsis"=>$synopsis,
-                                "genre"=>$genre,
-                                "hrefEpisode"=>$href
-                            );
-                            return $SubListDetail; 
-                        });
-                    }
-                    
-                    $SingleEpisode[]=array(
-                        "SingleEpisode"=>$SubListDetail
-                    );
-                    
-                }
-                
-
-                $dataPage= $crawler->filter('.pagination')->html();
-                $TotalSearchPage=$this->FilterPageEpisode($dataPage);
-                if(!is_numeric($TotalSearchPage)){
-                    $TotalSearchPage=1;
-                }
-                
-                if($PageNumber<=$TotalSearchPage){
-                    for($i=0;$i<count($SingleEpisode);$i++){
-                        $href=$BASE_URL."".$SingleEpisode[$i]['SingleEpisode'][0]['hrefEpisode'];
-                        $Image=$LastUpdateEps[0][$i]['image'];
-                        $Title=$LastUpdateEps[0][$i]['title'];
-                        $Status=$LastUpdateEps[0][$i]['status'];
-                        $Episode=$LastUpdateEps[0][$i]['episode'];
-                        $KeyEpisodeEnc=array(
-                            "href"=>$href,
-                            "Image"=>$Image,
-                            "Title"=>$Title,
-                            "Status"=>$Status,
-                            "Episode"=>$Episode
-                        );
-                        $result = base64_encode(json_encode($KeyEpisodeEnc));
-                        $result = str_replace("=", "QRCAbuK", $result);
-                        $iduniq0 = substr($result, 0, 10);
-                        $iduniq1 = substr($result, 10, 500);
-                        $result = $iduniq0 . "QtYWL" . $iduniq1;
-                        $KeyEpisode = $result;
-                        $LastUpdateAnime[] = array(
-                            "Image"=>$Image,
-                            "Title"=>$Title,
-                            "Status"=>$Status,
-                            "Episode"=>$Episode,
-                            "KeyEpisode"=>$KeyEpisode
-                        );
-                    }
-
-                    
-                    return $this->Success($TotalSearchPage,$PageNumber,$LastUpdateAnime);
-                }else{
-                    return $this->PageNotFound();
-                }
-                
-            }else{
-                return $this->PageNotFound();
-            }
+        if(!empty($limitRange) || !empty($starIndex) || ($isUpdated)){
+            $dataLastUpdate = MainModel::getDataLastUpdate([
+                'limit_range' => $limitRange,
+                'star_index' => $starIndex,
+                'is_updated' => $isUpdated
+            ]);
+            $TotalSearch = MainModel::getDataLastUpdate([
+                'cek_count' => TRUE
+            ]);
         }else{
-            return $this->PageNotFound();
+            $dataLastUpdate['collection'] = array();
+            $TotalSearch['collection'] = array();
         }
+        
+        if(count($dataLastUpdate['collection']) > 0){
+            foreach($dataLastUpdate['collection'] as $dataLastUpdateAs){
+                $dataDetail = MainModel::getDetailAnime([
+                    'id_detail' => $dataLastUpdateAs['id_detail_anime'],
+                ]);
+                $SlugDetail = '';
+                foreach($dataDetail['collection'] as $dataDetailAs){
+                    $SlugDetail = $dataDetailAs['slug'];
+                }
+                $Episode = substr(strrchr($dataLastUpdateAs['slug'], '-'), 1);
+                $LastUpdateAnime[] = array(
+                    "Image" => $dataLastUpdateAs['image'],
+                    "Title" => $dataLastUpdateAs['title'],
+                    "Status" => $dataLastUpdateAs['status'],
+                    "Episode" => $Episode,
+                    "IdDetailAnime" => $dataLastUpdateAs['id_detail_anime'],
+                    "IdListEpisode" => $dataLastUpdateAs['id_list_episode'],
+                    "SlugDetail" => $SlugDetail,
+                    "SlugEp" => $dataLastUpdateAs['slug'],
+                    "Date" => $dataLastUpdateAs['cron_at'],
+                );
+            }
+            $seachTotal = $TotalSearch['collection'];
+            $TotalSearchPage = HelpersController::TotalSeachPage($limitRange, $seachTotal);
+            $PageSearch = HelpersController::PageSearch($starIndex, $limitRange);
+            $getDataLastUpdate = [
+                "TotalSearchPage" => $TotalSearchPage,
+                "PageSearch" => $PageSearch,
+                "FirstPagination" => self::FirstPagination($PageSearch,$minRowPegination),
+                'LastUpdateAnime' => $LastUpdateAnime
+            ];
+            
+            return ResponseConnected::Success("Last Update Anime", NULL, $getDataLastUpdate, $awal);
+        }else{
+            return ResponseConnected::PageNotFound("Last Update Anime","Page Not Found.", $awal);
+        }
+    }
+
+    public function FirstPagination($PageSearch,$minRowPegination){
+        if($PageSearch % $minRowPegination === 0){
+            $FirstPagination = $PageSearch;
+        }elseif((($PageSearch % $minRowPegination) >= 1) && ($PageSearch > 5)){
+            $awal = floor($PageSearch / $minRowPegination);
+            $FirstPagination = $awal * $minRowPegination;
+        }else{
+            $FirstPagination = 1;
+        }
+        return $FirstPagination;
     }
 }

@@ -15,206 +15,94 @@ use \Sunra\PhpSimple\HtmlDomParser;
 use \App\User;
 use Illuminate\Support\Facades\DB;
 
+#Load Component External
+use Cache;
+use Config;
+
+#Load Helper V1
+use App\Helpers\V1\Converter as Converter;
+use App\Helpers\V1\ResponseConnected as ResponseConnected;
+use App\Helpers\V1\HelpersController as HelpersController;
+
+#Load Models V1
+use App\Models\V1\MainModel as MainModel;
+
 // done
 class ListAnimeController extends Controller
 {
 
+    public function testing(){
+        echo "WELCOM TO API CONTENT LIST ANIME NIMEINDO V1";
+    }
+
     public function ListAnime(Request $request){
-        $ApiKey=$request->header("X-API-KEY");
-        $generateKey =bin2hex(random_bytes(16));
-        $Token = DB::table('User')->where('token',$ApiKey)->first();
+        $awal = microtime(true);
+        $param = $request->all();
+        $ApiKey = $request->header("X-API-KEY");
+        $Users = MainModel::getUser($ApiKey);
+        $Token = $Users[0]['token'];
         if($Token){
             try{
-                $ConfigController = new ConfigController();
-                $BASE_URL_LIST=$ConfigController->BASE_URL_LIST_ANIME_1;
-                $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
-                return $this->ListAnimeValue($BASE_URL_LIST,$BASE_URL);
+                return $this->ListAnimeValue($param,$awal);
             }catch(\Exception $e){
-                return $this->InternalServerError();
+                return ResponseConnected::InternalServerError("List Anime","Internal Server Error",$awal);
             }
             
         }else{
-            return $this->InvalidToken();
+            return ResponseConnected::InvalidToken("List Anime","Invalid Token", $awal);
         }
-    }
-    public function InternalServerError(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Internal Server Error",
-                    "Code" => 500
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function Success($ListAnime){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"List Anime",
-                "Status"=> "Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Success.",
-                    "Code" => 200
-                ),
-                "Body"=> array(
-                    "ListAnime"=>$ListAnime
-                )
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function PageNotFound(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Page Not Found",
-                    "Code" => 404
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-
-    }
-    public function InvalidToken(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Invalid Token",
-                    "Code" => 203
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
     }
     
-    public function ListAnimeValue($BASE_URL_LIST,$BASE_URL){
-        $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
-        $client->getConfig('handler')->push(CloudflareMiddleware::create());
-        $goutteClient = new GoutteClient();
-        $goutteClient->setClient($client);
-        $crawler = $goutteClient->request('GET', $BASE_URL_LIST);
-        $response = $goutteClient->getResponse();
-        $status = $response->getStatus();
-        if($status == 200){
-            // Get the latest post in this category and display the titles
-            $nodeValues = $crawler->filter('.col-md-7')->each(function ($node,$i) {
-                $List= $node->filter('.table-responsive')->each(function ($nodel,$i) {
-                    $NameIndex =$nodel->filter('.col-md-12')->text('Default text content');
-                    
-                    $SubList= $nodel->filter('.col-md-6')->each(function ($nodel,$i) {
-                        $title = $nodel->filter('a')->text('Default text content');
-                        $href =$nodel->filter('a')->attr('href');
-                        $item = [
-                            'Title'=>$title,
-                            'href'=>$href,
-                            'type'=>""
-                        ];
-                        return $item;
-                    });
-                    
-                    $items = [
-                        'List'=>$SubList,
-                        'NameIndex'=>$NameIndex
-                    ];
-                    
-                    return $items;
-                });
-                return $List;
-            });
-            
-            if($nodeValues){
-                $ListAnime = array(); 
-                $NameIndex= array();
-                foreach($nodeValues[0] as $item){
-                    $NameIndexVal = trim($item['NameIndex']);
-                    $List=$item['List'];
-                    $ListSubIndex = array();
-                    foreach($List as $List){
-                        $filter = substr(preg_replace('/(\v|\s)+/', ' ', $List['Title']), 0, 2);
-                        $Title=$List['Title'];
-                        $Type=$List['type'];
-                        if($NameIndexVal=='##'){
-                            if(!ctype_alpha($filter) || ctype_alpha($filter)){
-                                $KeyListAnimEnc= array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>"",
-                                    "Type"=>trim($Type),
-                                    "href"=>$BASE_URL."".$List['href']
-                                );
-                                
-                                $result = base64_encode(json_encode($KeyListAnimEnc));
-                                $result = str_replace("=", "QRCAbuK", $result);
-                                $iduniq0 = substr($result, 0, 10);
-                                $iduniq1 = substr($result, 10, 500);
-                                $result = $iduniq0 . "QWTyu" . $iduniq1;
-                                $KeyListAnim = $result;
-                                
-                                
-                                $ListSubIndex[]= array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>"",
-                                    "Type"=>trim($Type),
-                                    "KeyListAnim"=>$KeyListAnim
-                                );
-                            }
-                        }else{
-                                $KeyListAnimEnc= array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>"",
-                                    "Type"=>trim($Type),
-                                    "href"=>$BASE_URL."".$List['href']
-                                );
-                                $result = base64_encode(json_encode($KeyListAnimEnc));
-                                $result = str_replace("=", "QRCAbuK", $result);
-                                $iduniq0 = substr($result, 0, 10);
-                                $iduniq1 = substr($result, 10, 500);
-                                $result = $iduniq0 . "QWTyu" . $iduniq1;
-                                $KeyListAnim = $result;
-                                
-                                $ListSubIndex[]= array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>"",
-                                    "Type"=>trim($Type),
-                                    "KeyListAnim"=>$KeyListAnim
-                                );
-                            
-                        }
-                    }
-                    $ListAnime[]=array(
-                        "NameIndex"=>$NameIndexVal,
-                        "ListSubIndex"=>$ListSubIndex
-                    );
-                }
-                return $this->Success($ListAnime);
-            }else{
-                return $this->PageNotFound();
-            }  
+    
+    public function ListAnimeValue($param,$awal){
+        $nameIndex = isset($param['params']['name_index']) ? $param['params']['name_index'] : '';
+        $allIndex  = isset($param['params']['all_index']) ? filter_var($param['params']['all_index'], FILTER_VALIDATE_BOOLEAN): FALSE ;
+        if(!empty($nameIndex) || ($allIndex)){
+            $dataListAnime  = MainModel::getDataListAnime([
+                'name_index' => $nameIndex,
+                'All_index' => $allIndex
+            ]);
         }else{
-            return $this->PageNotFound();
+            $dataListAnime['collection'] = array();
+        }
+        
+        if(count($dataListAnime['collection']) > 0){
+            
+            $NameIndex = array();
+            foreach($dataListAnime['collection'] as $dataListAnimeAs){
+                $NameIndex [] = $dataListAnimeAs['name_index'];
+            }
+            $ListAnime = array();
+            $NameIndex = HelpersController::__rearrangeArrayIndex($NameIndex);
+            for($i = 0 ; $i < count($NameIndex); $i++){
+                $ListSubIndex = array();
+                
+                foreach($dataListAnime['collection'] as $dataListAnimeAss){
+                    $NameIndexVal = $dataListAnimeAss['name_index'];
+                    $Title = ucwords(str_replace('-',' ',$dataListAnimeAss['slug']));
+                    if($NameIndexVal == $NameIndex[$i]){
+                        $ListSubIndex[] = array(
+                            'IdDetailAnime' => $dataListAnimeAss['id_detail_anime'],
+                            "Title" => $Title,
+                            "SlugDetail" => $dataListAnimeAss['slug'],
+                            "Image" => $dataListAnimeAss['image'],
+                            "Status" => $dataListAnimeAss['status']
+                        );
+                    }
+                }
+                $ListAnime[] = [
+                    "NameIndex" => $NameIndex[$i],
+                    "ListSubIndex" => $ListSubIndex
+                ];   
+            }
+            $LogSave = [
+                'ListAnime' => $ListAnime
+            ];
+            return ResponseConnected::Success("List Anime", NULL, $LogSave, $awal);
+        }else{
+            return ResponseConnected::PageNotFound("List Anime","Page Not Found.", $awal);
         }
     }
+
     //
 }
