@@ -48,6 +48,7 @@ class SearchAnimeControoler extends Controller
         $keyword = (isset($param['params']['keyword'])) ? $param['params']['keyword'] : '';
         $limitRange = (isset($param['params']['limit_range'])) && (!empty($param['params']['limit_range'])) ? (int)($param['params']['limit_range']) : (int)20;
         $starIndex = (isset($param['params']['star_index'])) ? (int)($param['params']['star_index']) : 0;
+        $minRowPegination = (isset($param['params']['min_row_pegination'])) ? (int)($param['params']['min_row_pegination']) : 5;
         $isUpdated = (isset($param['params']['is_updated']) ? filter_var($param['params']['is_updated'], FILTER_VALIDATE_BOOLEAN) : FALSE);
         if(!empty($keyword)){
             $dataSearch = MainModel::getSearchWithDetailAnime([
@@ -94,12 +95,25 @@ class SearchAnimeControoler extends Controller
             $SearchDataAnime = [
                 "TotalSearchPage" => $TotalSearchPage,
                 "PageSearch" => $PageSearch,
+                "FirstPagination" => self::FirstPagination($PageSearch,$minRowPegination),
                 'SearchAnime' => $SearchAnime
             ];
             return ResponseConnected::Success("Search Anime", NULL, $SearchDataAnime, $awal);
         }else{
             return ResponseConnected::PageNotFound("Search Anime","Page Not Found.", $awal);
         } 
+    }
+
+    public function FirstPagination($PageSearch,$minRowPegination){
+        if($PageSearch % $minRowPegination === 0){
+            $FirstPagination = $PageSearch;
+        }elseif((($PageSearch % $minRowPegination) >= 1) && ($PageSearch > 5)){
+            $awal = floor($PageSearch / $minRowPegination);
+            $FirstPagination = $awal * $minRowPegination;
+        }else{
+            $FirstPagination = 1;
+        }
+        return $FirstPagination;
     }
 
     
