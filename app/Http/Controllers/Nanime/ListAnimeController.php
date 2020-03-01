@@ -86,7 +86,8 @@ class ListAnimeController extends Controller
                             "Title" => $Title,
                             "SlugDetail" => $dataListAnimeAss['slug'],
                             "Image" => $dataListAnimeAss['image'],
-                            "Status" => $dataListAnimeAss['status']
+                            "Status" => $dataListAnimeAss['status'],
+                            "DatePublish" => $dataListAnimeAss['cron_at']
                         );
                     }
                 }

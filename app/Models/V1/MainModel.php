@@ -229,7 +229,7 @@ class MainModel extends Model
         $genre = (isset($params['genre']) ? $params['genre'] : '');  #limit data related
         $limitRange = (isset($params['limit_range']) ? (int)$params['limit_range'] : 20);  #limit data related
         $starIndex = (isset($params['star_index']) ? (int)$params['star_index'] : 0);  #limit data related
-        $enableCache = (isset($params['enable_cache']) ? $params['enable_cache'] : FALSE); #cache
+        $enableCache = (isset($params['enable_cache']) ? $params['enable_cache'] : TRUE); #cache
         $cacheTimeout = (isset($params['cache_timeout']) ? $params['cache_timeout'] : 180); #seconds
         $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
         $cekCount = (isset($params['cek_count']) ? $params['cek_count'] : FALSE); #untuk data terbaru 2 jam terakhir
