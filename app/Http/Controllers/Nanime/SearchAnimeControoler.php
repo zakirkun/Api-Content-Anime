@@ -72,9 +72,10 @@ class SearchAnimeControoler extends Controller
             ]);
             
             $TotalSearch = MainModel::getSearchWithDetailAnime([
-                'keyword' => $keyword,
+                'status' => $status,
                 'cek_count' => TRUE
             ]);
+            
         }
         else{
             $dataSearch['collection'] = array();
@@ -106,6 +107,7 @@ class SearchAnimeControoler extends Controller
             }
 
             $seachTotal = $TotalSearch['collection'];
+            
             $TotalSearchPage = HelpersController::TotalSeachPage($limitRange, $seachTotal);
             $PageSearch = HelpersController::PageSearch($starIndex, $limitRange);
             $SearchDataAnime = [
