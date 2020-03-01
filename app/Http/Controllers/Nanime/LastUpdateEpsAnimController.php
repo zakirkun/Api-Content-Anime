@@ -78,9 +78,10 @@ class LastUpdateEpsAnimController extends Controller
                     $SlugDetail = $dataDetailAs['slug'];
                 }
                 $Episode = substr(strrchr($dataLastUpdateAs['slug'], '-'), 1);
+                $Title = ucwords(str_replace('-',' ',$dataLastUpdateAs['slug']));
                 $LastUpdateAnime[] = array(
                     "Image" => $dataLastUpdateAs['image'],
-                    "Title" => $dataLastUpdateAs['title'],
+                    "Title" => $Title,
                     "Status" => $dataLastUpdateAs['status'],
                     "Episode" => $Episode,
                     "IdDetailAnime" => $dataLastUpdateAs['id_detail_anime'],

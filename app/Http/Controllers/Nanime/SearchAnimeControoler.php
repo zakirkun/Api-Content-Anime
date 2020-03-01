@@ -79,8 +79,9 @@ class SearchAnimeControoler extends Controller
                     ],
                     "Synopsis" => $dataSearchAs['synopsis'], 
                 ];
+                $Title = ucwords(str_replace('-',' ',$dataSearchAs['slug']));
                 $SearchAnime [] = [
-                    "Title" => $dataSearchAs['title'],
+                    "Title" => $Title,
                     "Image" => $dataSearchAs['image'],
                     "IdDetailAnime" => $dataSearchAs['id_detail_anime'],
                     "SlugDetail" => $dataSearchAs['slug'],

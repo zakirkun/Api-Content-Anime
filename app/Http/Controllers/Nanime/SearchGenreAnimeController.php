@@ -82,8 +82,9 @@ class SearchGenreAnimeController extends Controller
                     ),
                     "Synopsis "=> $dataSearchAs['synopsis'], 
                 );
+                $Title = ucwords(str_replace('-',' ',$dataSearchAs['slug']));
                 $SearchGenreAnime [] = array(
-                    "Title" => $dataSearchAs['title'],
+                    "Title" => $Title,
                     "Image" => $dataSearchAs['image'],
                     "IdDetailAnime" => $dataSearchAs['id_detail_anime'],
                     "SlugDetail" => $dataSearchAs['slug'],

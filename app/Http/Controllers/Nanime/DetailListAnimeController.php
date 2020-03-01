@@ -87,7 +87,7 @@ class DetailListAnimeController extends Controller
                     );
                 }
                 $Synopsis = $dataDetailAs['synopsis'];
-                $Title = $dataDetailAs['title'];
+                $Title = ucwords(str_replace('-',' ',$dataDetailAs['slug']));
                 $imageUrl = $dataDetailAs['image'];
                 $Slug = $dataDetailAs['slug'];
                 

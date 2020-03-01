@@ -109,8 +109,9 @@ class StreamAnimeController extends Controller
                         "ListInfo" => $ListInfo,
                         "Synopsis" => $dataStreamAs['synopsis']
                     );
+                    $Title = ucwords(str_replace('-',' ',$dataStreamAs['slug']));
                     $StreamAnime[] = array(
-                        "Title" => $dataStreamAs['title'],
+                        "Title" => $Title,
                         "Image" => $dataStreamAs['image'],
                         "SlugEp" => $dataStreamAs['slug'],
                         "ListDetail" => $ListDetail,
