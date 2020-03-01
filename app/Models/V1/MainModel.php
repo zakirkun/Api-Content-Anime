@@ -239,8 +239,8 @@ class MainModel extends Model
             $pref = 'getSearchWithDetailAnime';
             $nameCache = '';
             if(!empty($keyword)){
-                $nameCache = $keyword;    
-            }if(!empty($status)){
+                $nameCache = $keyword; 
+            }elseif(!empty($status)){
                 $nameCache = $status;
             }else{
                 $nameCache = $genre;

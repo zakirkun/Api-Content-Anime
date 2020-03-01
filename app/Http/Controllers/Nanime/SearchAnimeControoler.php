@@ -58,11 +58,12 @@ class SearchAnimeControoler extends Controller
                 'star_index' => $starIndex,
                 'is_updated' => $isUpdated
             ]);
+            
             $TotalSearch = MainModel::getSearchWithDetailAnime([
                 'keyword' => $keyword,
                 'cek_count' => TRUE
             ]);
-        }if(!empty($status)){
+        }elseif(!empty($status)){
             $dataSearch = MainModel::getSearchWithDetailAnime([
                 'status' => $status,
                 'limit_range' => $limitRange,
