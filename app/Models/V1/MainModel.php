@@ -90,7 +90,7 @@ class MainModel extends Model
                 try {
                     $query = CollectionListAnimeModel::on($database_name)
                         ->timeout(9000)
-                        ->orderBy('name_index','desc');
+                        ->orderBy('cron_at','desc');
                     if(!empty($nameIndex)) $query = $query->where('name_index', '=', '#'.$nameIndex);
                     
                 } catch (\Exception $e) {
