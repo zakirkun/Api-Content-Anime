@@ -46,6 +46,7 @@ class SearchAnimeControoler extends Controller
     
     public function SearchAnimValue($param,$awal){
         $keyword = (isset($param['params']['keyword'])) ? $param['params']['keyword'] : '';
+        $status = (isset($param['params']['status'])) ? $param['params']['status'] : '';
         $limitRange = (isset($param['params']['limit_range'])) && (!empty($param['params']['limit_range'])) ? (int)($param['params']['limit_range']) : (int)20;
         $starIndex = (isset($param['params']['star_index'])) ? (int)($param['params']['star_index']) : 0;
         $minRowPegination = (isset($param['params']['min_row_pegination'])) ? (int)($param['params']['min_row_pegination']) : 5;
@@ -61,7 +62,20 @@ class SearchAnimeControoler extends Controller
                 'keyword' => $keyword,
                 'cek_count' => TRUE
             ]);
-        }else{
+        }if(!empty($status)){
+            $dataSearch = MainModel::getSearchWithDetailAnime([
+                'status' => $status,
+                'limit_range' => $limitRange,
+                'star_index' => $starIndex,
+                'is_updated' => $isUpdated
+            ]);
+            
+            $TotalSearch = MainModel::getSearchWithDetailAnime([
+                'keyword' => $keyword,
+                'cek_count' => TRUE
+            ]);
+        }
+        else{
             $dataSearch['collection'] = array();
             $TotalSearch['collection'] = array();
         }

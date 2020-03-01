@@ -140,7 +140,7 @@ class MainModel extends Model
         $trending = (isset($params['tranding']) ? $params['tranding'] : FALSE); #cache
         $Schedule = (isset($params['Schedule']) ? $params['Schedule'] : FALSE); #cache
 
-        $enableCache = (isset($params['enable_cache']) ? $params['enable_cache'] : FALSE); #cache
+        $enableCache = (isset($params['enable_cache']) ? $params['enable_cache'] : TRUE); #cache
         $cacheTimeout = (isset($params['cache_timeout']) ? $params['cache_timeout'] : 180); #seconds
         
         /*Read Cache*/
@@ -225,6 +225,7 @@ class MainModel extends Model
         
         $idDetail = (isset($params['id_detail']) ? $params['id_detail'] : ''); #id yang akan dicari
         $keyword = (isset($params['keyword']) ? $params['keyword'] : '');  #limit data related
+        $status = (isset($params['status']) ? $params['status'] : '');  #limit data related
         $genre = (isset($params['genre']) ? $params['genre'] : '');  #limit data related
         $limitRange = (isset($params['limit_range']) ? (int)$params['limit_range'] : 20);  #limit data related
         $starIndex = (isset($params['star_index']) ? (int)$params['star_index'] : 0);  #limit data related
@@ -234,14 +235,15 @@ class MainModel extends Model
         $cekCount = (isset($params['cek_count']) ? $params['cek_count'] : FALSE); #untuk data terbaru 2 jam terakhir
         
         /*Read Cache*/
-        
         if($enableCache){
             $pref = 'getSearchWithDetailAnime';
             $nameCache = '';
-            if(empty($keyword)){
-                $nameCache = $genre;
+            if(!empty($keyword)){
+                $nameCache = $keyword;    
+            }if(!empty($status)){
+                $nameCache = $status;
             }else{
-                $nameCache = $keyword;
+                $nameCache = $genre;
             }
             
             unset($params['enable_cache'], $params['cache_timeout']); //agar ada cachenya (di cache_timeout berbentuk datetimr jadi dinamis)
@@ -265,6 +267,7 @@ class MainModel extends Model
                     if(!empty($idDetail)) $query = $query->where('id_detail_anime', '=', (int)$idDetail);
                     if(!empty($keyword)) $query = $query->where('keyword', 'LIKE',"%".$keyword."%");
                     if(!empty($genre)) $query = $query->where('genre', 'LIKE',"%".$genre."%");
+                    if(!empty($status)) $query = $query->where('status', 'LIKE',"%".$status."%");
                     if($isUpdated){ #ambil data update atau terbaru
                         $query = $query->orderBy('cron_at', 'DESC');
                     }
