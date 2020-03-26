@@ -77,20 +77,18 @@ class StreamAnimeController extends Controller
                         'id_detail' => $dataStreamAs['id_detail_anime'],
                     ]);
                     
-                    $NextStreamEps = (int)substr($dataStreamAs['slug'], strrpos($dataStreamAs['slug'], '-') + 1) + 1;
-                    $PrevStreamEps = (int)substr($dataStreamAs['slug'], strrpos($dataStreamAs['slug'], '-') + 1) - 1;
-                    
+                    // dd($sluug); 
                     if(count($dataDetail['collection']) > 0){
                         foreach($dataDetail['collection'] as $detailAnime){
                             
                             $TotalEpisode = count($detailAnime['episode']);
-                            $NextStream = (int)$TotalEpisode - $NextStreamEps;
-                            $PrevStream = ($PrevStreamEps < 0 ) ? '' : (int)($PrevStreamEps - 1);
-                            $NextStream = ($NextStream < 0 ) ? '' : $NextStream;
+                            // $NextStream = (int)$TotalEpisode - $NextStreamEps;
+                            $PrevStream = (self::searchForKey($detailAnime['episode'],'slug' ,$dataStreamAs['slug'])) ? (int)(self::searchForKey($detailAnime['episode'],'slug' ,$dataStreamAs['slug']) - 1) : '';
+                            $NextStream = (self::searchForKey($detailAnime['episode'],'slug' ,$dataStreamAs['slug'])) ? (int)(self::searchForKey($detailAnime['episode'],'slug' ,$dataStreamAs['slug']))+1 : '';
                             
                             $IdNextStream = !empty($detailAnime['episode'][$NextStream]) ? $detailAnime['episode'][$NextStream]['id_stream_anime'].'-'.$detailAnime['episode'][$NextStream]['slug'] : '';
                             $IdPrevStream = !empty($detailAnime['episode'][$PrevStream]) ? $detailAnime['episode'][$PrevStream]['id_stream_anime'].'-'.$detailAnime['episode'][$PrevStream]['slug'] : '';
-                            
+                            // dd($dataStreamAs['slug']);
                                 $ListInfo = array(
                                     "Tipe" => $detailAnime['type'],
                                     "Status" => $detailAnime['status'],
@@ -130,6 +128,17 @@ class StreamAnimeController extends Controller
             }else{
                 return ResponseConnected::PageNotFound("Server Stream Anime","Page Not Found.", $awal);
             }
+        }
+
+        public function searchForKey($products, $field, $value){
+            
+            foreach($products as $key => $product)
+            {   
+                if($product[$field] === $value )
+                    return $key;
+                 
+            }
+            return false;
         }
 
 }
