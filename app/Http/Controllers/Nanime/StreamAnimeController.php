@@ -85,7 +85,7 @@ class StreamAnimeController extends Controller
                             
                             $TotalEpisode = count($detailAnime['episode']);
                             $NextStream = (int)$TotalEpisode - $NextStreamEps;
-                            $PrevStream = ($PrevStreamEps < 0 ) ? '' : (int)($TotalEpisode - $PrevStreamEps);
+                            $PrevStream = ($PrevStreamEps < 0 ) ? '' : (int)($PrevStreamEps - 1);
                             $NextStream = ($NextStream < 0 ) ? '' : $NextStream;
                             
                             $IdNextStream = !empty($detailAnime['episode'][$NextStream]) ? $detailAnime['episode'][$NextStream]['id_stream_anime'].'-'.$detailAnime['episode'][$NextStream]['slug'] : '';
