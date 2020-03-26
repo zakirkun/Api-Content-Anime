@@ -76,17 +76,21 @@ class StreamAnimeController extends Controller
                     $dataDetail = MainModel::getDetailAnime([
                         'id_detail' => $dataStreamAs['id_detail_anime'],
                     ]);
-                    $NextStreamEps = (int)str_replace('-','',filter_var($dataStreamAs['slug'], FILTER_SANITIZE_NUMBER_INT)) + 1;
-                    $PrevStreamEps = (int)str_replace('-','',filter_var($dataStreamAs['slug'], FILTER_SANITIZE_NUMBER_INT)) - 1;
+                    
+                    $NextStreamEps = (int)substr($dataStreamAs['slug'], strrpos($dataStreamAs['slug'], '-') + 1) + 1;
+                    $PrevStreamEps = (int)substr($dataStreamAs['slug'], strrpos($dataStreamAs['slug'], '-') + 1) - 1;
+                    
                     if(count($dataDetail['collection']) > 0){
                         foreach($dataDetail['collection'] as $detailAnime){
+                            
                             $TotalEpisode = count($detailAnime['episode']);
                             $NextStream = (int)$TotalEpisode - $NextStreamEps;
                             $PrevStream = ($PrevStreamEps < 0 ) ? '' : (int)($TotalEpisode - $PrevStreamEps);
                             $NextStream = ($NextStream < 0 ) ? '' : $NextStream;
-
+                            
                             $IdNextStream = !empty($detailAnime['episode'][$NextStream]) ? $detailAnime['episode'][$NextStream]['id_stream_anime'].'-'.$detailAnime['episode'][$NextStream]['slug'] : '';
                             $IdPrevStream = !empty($detailAnime['episode'][$PrevStream]) ? $detailAnime['episode'][$PrevStream]['id_stream_anime'].'-'.$detailAnime['episode'][$PrevStream]['slug'] : '';
+                            
                                 $ListInfo = array(
                                     "Tipe" => $detailAnime['type'],
                                     "Status" => $detailAnime['status'],
