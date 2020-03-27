@@ -65,6 +65,7 @@ class StreamAnimeController extends Controller
                 // for get iframe from javascript
                 $ListInfo = array();
                 $ListServer = array();
+                $ListDownload = array();
                 $dataStreamAs = $getDataStream['collection'];
                     foreach($dataStreamAs['data_server'] as $ServerList){
                         $ListServer[] = array(
@@ -72,7 +73,17 @@ class StreamAnimeController extends Controller
                             "NameServer" => $ServerList['name_server'],
                             'IframeSrc' => $ServerList['iframe_src'],
                         );
-                    }                    
+                    }   
+                    foreach($dataStreamAs['data_download'] as $key => $DownloadList){
+                        foreach($DownloadList as $donloadList){
+                            $ListDownload[$key][] = [
+                                'IdDownload' => $donloadList['id_download'],
+                                'NameDownload' => $donloadList['name_download'],
+                                'AdflyLink' => $donloadList['adfly_link']
+                            ];
+                        }
+                    }
+                    
                     $dataDetail = MainModel::getDetailAnime([
                         'id_detail' => $dataStreamAs['id_detail_anime'],
                     ]);
@@ -85,10 +96,11 @@ class StreamAnimeController extends Controller
                             // $NextStream = (int)$TotalEpisode - $NextStreamEps;
                             $PrevStream = (self::searchForKey($detailAnime['episode'],'slug' ,$dataStreamAs['slug'])) ? (int)(self::searchForKey($detailAnime['episode'],'slug' ,$dataStreamAs['slug']) - 1) : '';
                             $NextStream = (self::searchForKey($detailAnime['episode'],'slug' ,$dataStreamAs['slug'])) ? (int)(self::searchForKey($detailAnime['episode'],'slug' ,$dataStreamAs['slug']))+1 : '';
-                            
+                            // $search = self::searchForKey($detailAnime['episode'],'slug' ,$dataStreamAs['slug']);
+                            // dd($dataStreamAs);
                             $IdNextStream = !empty($detailAnime['episode'][$NextStream]) ? $detailAnime['episode'][$NextStream]['id_stream_anime'].'-'.$detailAnime['episode'][$NextStream]['slug'] : '';
                             $IdPrevStream = !empty($detailAnime['episode'][$PrevStream]) ? $detailAnime['episode'][$PrevStream]['id_stream_anime'].'-'.$detailAnime['episode'][$PrevStream]['slug'] : '';
-                            // dd($dataStreamAs['slug']);
+                            
                                 $ListInfo = array(
                                     "Tipe" => $detailAnime['type'],
                                     "Status" => $detailAnime['status'],
@@ -117,7 +129,8 @@ class StreamAnimeController extends Controller
                         "Image" => $dataStreamAs['image'],
                         "SlugEp" => $dataStreamAs['slug'],
                         "ListDetail" => $ListDetail,
-                        "ListServer" => $ListServer
+                        "ListServer" => $ListServer,
+                        "DownloadList" => $ListDownload
                     );
                 $LogSave = [
                     'StreamAnime' => $StreamAnime
