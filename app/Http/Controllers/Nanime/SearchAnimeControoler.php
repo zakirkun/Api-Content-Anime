@@ -88,7 +88,7 @@ class SearchAnimeControoler extends Controller
                 
                 $ListDetail[] = [
                     "ListInfo" => [
-                        "Status" => $dataSearchAs['status'], 
+                        "Status" => ($dataSearchAs['status'] == '0') ? 'Ended': $dataSearchAs['status'], 
                         "Years" => '', 
                         "Rating" => $dataSearchAs['rating'], 
                         "Duration" => $dataSearchAs['duration'], 
